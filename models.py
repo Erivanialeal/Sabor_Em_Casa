@@ -1,35 +1,65 @@
 #modelo do banco de dados
-from app import db
+from extensions import db
+from sqlalchemy.sql import func
+from werkzeug.security import generate_password_hash
+
+
+
 
 #db.Model é a classe base do SQLAlchemy para mapear a tabela do 
 # banco de dados a uma classe Python (ORM - Object Relational Mapping).
-class User(db.Model):
-    __tablename__='users' #nome da tabela
-    __table_args__ = {'extend_existing': True}#Um dicionário que contém argumentos adicionais para a tabela.
+class Usuario(db.Model):
+    __tablename__='usuarios' #nome da tabela
 
-
-    id=db.Column(db.Integer,primary_key=True,autoincrement=True)
-    nome_usuario=db.Column(db.String(50),nullable=False,unique=True)#nullable=false torna obrigatorio o preenchimento dessa coluna
+    id=db.Column(db.Integer,primary_key=True)
+    nome=db.Column(db.String(50),nullable=False,unique=True)#nullable=false torna obrigatorio o preenchimento dessa coluna
     email=db.Column(db.String(120),nullable=False,unique=True)#unique=true Garante que os valores nesta coluna sejam únicos
-    role=db.Column(db.String(20))
-    senha_hash =db.Column(db.String(128),nullable=False)
+    role=db.Column(db.String(20), default='comum') #Padrão é comun
+    senha_hash = db.Column(db.String(512), nullable=False)  # Aqui você deve ter a coluna 'senha_hash'
+    
+    def __init__(self, nome, email, role, senha_hash):
+        self.nome = nome
+        self.email = email
+        self.role = role
+        self.senha_hash =senha_hash
+
+    def set_role(self,new_role,authorized=False):
+        if new_role =='administrador' and not authorized:
+            raise ValueError("Somente usuários autorizados podem ser definidos como administradores.")
+        self.role = new_role
+    
 
     def __repr__(self):
-        return f'<Usuario {self.nome_usuario}>'
-    
-class Produtos(db.Model):
-    __tablename__='produtos'
-    __table_args__={'extend_existing':True}
+        return f'<Usuario {self.nome}>'
 
-    id=db.Column(db.Integer, primary_key=True,autoincrement=True)
-    nome_produto=db.Column(db.String(50),nullable=False)
-    preco=db.Column(db.Numeric(10,2),nullable=False)
-    descricao=db.Column(db.Text)
-    categoria=db.Column(db.Integer,db.ForeignKey('categorias.id'),nullable=False)
+# Definição da classe Produtos
+class Produtos(db.Model):
+    __tablename__ = 'produtos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nome = db.Column(db.String(50), nullable=False)
+    preco = db.Column(db.Numeric(10, 2), nullable=False)
+    descricao = db.Column(db.Text)
+    categoria = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
 
     def __repr__(self):
         return f'<Produto {self.nome_produto}>'
-    
+
+# Definição da classe Estoque
+class Estoque(db.Model):
+    __tablename__ = 'estoque'
+
+    id = db.Column(db.Integer, primary_key=True)
+    produto_id = db.Column(db.Integer, db.ForeignKey('produtos.id'), nullable=False)
+    quantidade = db.Column(db.Integer, nullable=False)
+    atualizado_em = db.Column(db.DateTime, default=func.now(), onupdate=func.now())
+
+    # Relação com a tabela Produtos
+    produto = db.relationship('Produtos', backref='estoque', lazy=True)
+
+    def __repr__(self):
+        return f"<Estoque(id={self.id})>"
+
 class Categoria(db.Model):
     __tablename__='categorias'
     __table_args__={'extend_existing':True}
@@ -45,7 +75,7 @@ class Pedidos(db.Model):
     __table_args__={'extend_existing':True}
 
     id=db.Column(db.Integer,primary_key=True,autoincrement=True)
-    usuario_id=db.Column(db.Integer,db.ForeignKey('users.id'),nullable=False)
+    usuario_id=db.Column(db.Integer,db.ForeignKey('usuarios.id'),nullable=False)
     total=db.Column(db.Numeric(10,2), nullable=False)
     status=db.Column(db.String(20), nullable=False)
     criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
@@ -72,7 +102,7 @@ class Pagamento(db.Model):
 
     id=db.Column(db.Integer,primary_key=True,autoincrement=True)
     pedido_id=db.Column(db.Integer, db.ForeignKey('pedidos.id'),nullable=False)
-    usuario_id=db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False)
+    usuario_id=db.Column(db.Integer, db.ForeignKey('usuarios.id'),nullable=False)
     data_pagamento=db.Column(db.DateTime,nullable=False)
     metodo_pagamento=db.Column(db.String(50),nullable=False)
     valor_pagamento=db.Column(db.Numeric(10,2), nullable=False)
@@ -83,12 +113,11 @@ class Pagamento(db.Model):
     def __repr__(self):
         return f'< Pagamento {self.id}>'
     
-class Ederecos(db.Model):
-    __tablename__='endereços'
-    __table_args__={'extend_existing':True}
+class Enderecos(db.Model):
+    __tablename__='enderecos'
 
-    id=db.Column(db.Integer, primary_key=True,autoincrement=True)
-    usuario_id=db.Column(db.Integer, db.ForeignKey('users.id'),nullable=False)
+    id=db.Column(db.Integer, primary_key=True)
+    usuario_id=db.Column(db.Integer, db.ForeignKey('usuarios.id'),nullable=False)
     rua=db.Column(db.String(100),nullable=False)
     numero=db.Column(db.String(50), nullable=False)
     complemento=db.Column(db.String(100), nullable=False)
@@ -98,27 +127,5 @@ class Ederecos(db.Model):
     cep=db.Column(db.String(50),nullable=False)
 
     def __repr__(self):
-        return f'<Endereço id={self.id} usuario_id{self.usuario_id}>'
+        return f'<Endereço id={self.rua}>'
     
-from sqlalchemy.sql import func
-from flask_sqlalchemy import SQLAlchemy
-
-db = SQLAlchemy()
-
-class Estoque(db.Model):
-    __tablename__ = 'estoque'
-    __table_args__ = {'extend_existing': True}
-
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    produto_id = db.Column(db.Integer, db.ForeignKey('produtos.id'), nullable=False)
-    quantidade = db.Column(db.Integer, nullable=False)
-    atualizado_em = db.Column(db.DateTime, default=func.now(), onupdate=func.now())
-
-    # Relação com a tabela Produtos (se existir)
-    produto = db.relationship('Produto', backref='estoque', lazy=True)
-
-    def __repr__(self):
-        return f"<Estoque(id={self.id}, produto_id={self.produto_id}, quantidade={self.quantidade}, atualizado_em={self.atualizado_em})>"
-
-
-
