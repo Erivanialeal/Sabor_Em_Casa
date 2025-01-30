@@ -275,6 +275,40 @@ def adicionar_endereco():
     except Exception as e:
         db.session.rollback()  # Reverte alterações em caso de erro
         return jsonify({"erro": "Erro ao salvar o endereço no banco de dados.", "detalhes": str(e)}), 500
+    
+@usuario_bp.route("/editar_endereço/<int:id>",methods=['PUT'])
+def editar_endereço(id):
+    #Buscar o endereço no banco de dados
+    endereco=Enderecos.query.get(id)
+    if not endereco:
+        return jsonify({"erro":"Nenhum arquivo json encontrado"}),404
+    # obter os dados da requisição
+    dados=request.get_json()
+
+    endereco.rua=dados.get("rua",endereco.rua)
+    endereco.numero=dados.get("numero",endereco.rua)
+    endereco.complemento=dados.get("complemento",endereco.rua)
+    endereco.bairro=dados.get("bairro",endereco.rua)
+    endereco.cidade=dados.get("cidade",endereco.rua)
+    endereco.estado=dados.get("estado",endereco.rua)
+    endereco.cep=dados.get("cep",endereco.rua)
+
+    db.session.commit()
+
+    return jsonify({'mensagem': 'Endereço atualizado com sucesso!'}), 200
+
+@usuario_bp.route("/deletar_endereço/<int:id>",methods={'DELETE'})
+def deletar_endereco(id):
+    #buscar endereço no banco
+    endereco=Enderecos.query.get(id)
+    if not endereco:
+        return jsonify({"Erro":"Nenhum endereço encontrado!"}),404
+    db.session.delete(endereco)
+    db.session.commit()
+    return jsonify({"message":"Endereço deletado com sucesso!"}),200
+
+    
+    
 
     
 
