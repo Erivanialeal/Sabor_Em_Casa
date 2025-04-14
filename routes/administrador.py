@@ -1,6 +1,6 @@
 from flask import jsonify,Blueprint,request
 from functools import wraps
-from extensions import jwt_required,get_jwt_identity
+from app.extensions import jwt_required,get_jwt_identity
 #Middleware para verificar se usuario é administrador
 def admin_requirend(fn):
     @wraps(fn)

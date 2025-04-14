@@ -1,5 +1,5 @@
 #modelo do banco de dados
-from extensions import db
+from app.extensions import db
 from sqlalchemy.sql import func
 from werkzeug.security import generate_password_hash
 
@@ -14,19 +14,21 @@ class Usuario(db.Model):
     id=db.Column(db.Integer,primary_key=True)
     nome=db.Column(db.String(50),nullable=False,unique=True)#nullable=false torna obrigatorio o preenchimento dessa coluna
     email=db.Column(db.String(120),nullable=False,unique=True)#unique=true Garante que os valores nesta coluna sejam únicos
-    role=db.Column(db.String(20), default='comum') #Padrão é comun
-    senha_hash = db.Column(db.String(512), nullable=False)  # Aqui você deve ter a coluna 'senha_hash'
+    telefone=db.Column(db.String(20), nullable=False)
+    tipo_de_usuario= db.Column(db.Enum("comum","Administrador",name='tipo_usuario_enum'),nullable=False, default="comum")
+    senha_hash = db.Column(db.String(512), nullable=False) 
     
-    def __init__(self, nome, email, role, senha_hash):
+    def __init__(self, nome, email, telefone,tipo_de_usuario ,senha_hash):
         self.nome = nome
         self.email = email
-        self.role = role
+        self.telefone = telefone
+        self.Tipo_de_usuario=tipo_de_usuario
         self.senha_hash =senha_hash
 
-    def set_role(self,new_role,authorized=False):
-        if new_role =='administrador' and not authorized:
+    def set_tipo_de_usuario(self,novo_tipo,authorized=False):
+        if novo_tipo =='administrador' and not authorized:
             raise ValueError("Somente usuários autorizados podem ser definidos como administradores.")
-        self.role = new_role
+        self.tipo_de_usuario = novo_tipo
     
 
     def __repr__(self):

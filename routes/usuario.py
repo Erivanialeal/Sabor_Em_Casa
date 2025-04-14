@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify
-from extensions import db  # Certifique-se de que `db` está configurado corretamente
-from models import Usuario,Enderecos
+from app.extensions import db  # Certifique-se de que `db` está configurado corretamente
+from app.models import Usuario,Enderecos
 from werkzeug.security import generate_password_hash,check_password_hash
-from extensions import create_access_token,jwt_required,get_jwt_identity,datetime,timedelta,decode_token
-from extensions import configuracao
+from app.extensions import create_access_token,jwt_required,get_jwt_identity,datetime,timedelta,decode_token
+from app.extensions import configuracao
 
 
 # Criação do Blueprint para usuários

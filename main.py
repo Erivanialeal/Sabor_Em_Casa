@@ -1,11 +1,11 @@
 from flask import Flask
-from config import Config
-from extensions import db, migrate # Exemplo, ajuste conforme necessário
+from app.config import Config 
+from app.extensions import db, migrate # Exemplo, ajuste conforme necessário
 from flask_jwt_extended import JWTManager
 from routes import register_blueprints
 
 # Função para criar a aplicação
-def create_app():
+def criar():
     app = Flask(__name__)
     app.config.from_object(Config) #carrega as configurações da minha aplicação
 
@@ -20,5 +20,5 @@ def create_app():
 
 # Para rodar a aplicação
 if __name__ == '__main__':
-    app = create_app()
+    app = criar()
     app.run(debug=True)
