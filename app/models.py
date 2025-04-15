@@ -38,39 +38,53 @@ class Usuario(db.Model):
 class Produtos(db.Model):
     __tablename__ = 'produtos'
 
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(50), nullable=False)
-    preco = db.Column(db.Numeric(10, 2), nullable=False)
-    descricao = db.Column(db.Text)
-    categoria = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False)
+    id = db.Column(db.Integer, primary_key=True) # ID do produto
+    nome = db.Column(db.String(50), nullable=False) # Nome do produto
+    descricao = db.Column(db.Text) # Descrição do produto
+    imagem=db.Column(db.String(100)) # URL ou caminho da imagem do produto
+    categoria = db.Column(db.Integer, db.ForeignKey('categorias.id'), nullable=False) # Chave estrangeira para a tabela categorias
 
     def __repr__(self):
-        return f'<Produto {self.nome_produto}>'
+        return f'<Produto {self.nome}>' # Nome do produto
+
+class TamanhosProdutos(db.Model): # Definição da tabela de tamanhos dos produtos.
+    __tablename__="tamanhos_produtos"
+    
+    id= db.Column(db.Integer,primary_key=True,autoincrement=True) # ID do tamanho 
+    nome=db.Column(db.String(50),nullable=False,unique=True) # Nome do tamanho
+
+class PrecosProdutos(db.Model): # Definição da tabela de preços dos produtos.
+    __tablename__="precos_produtos"
+    id= db.Column(db.Integer, primary_key=True,autoincrement=True) # ID do preço
+    produto_id= db.Column(db.Integer,db.ForeignKey('produtos.id'),nullable=False) # Chave estrageira para a tabela produtos
+    tamanho_id=db.Column(db.Integer,db.ForeignKey('tamanhos_produtos.id'),nullable=False) # Chave estrangeira para a tabela tamanhos_produtos
+    preco=db.Column(db.Numeric(10,2),nullable=False) # Preço do produto
+
+class Ingredientes(db.Model): # Definição da tabela de ingredientes dos produtos.
+    __tablename__="ingredientes"
+    id= db.Column(db.Integer,primary_key =True, autoincrement=True)
+    nome= db.Column(db.String(50),nullable=False,unique=True) # Nome do ingrediente
+    quantidade_em_estoque= db.Column(db.Integer,nullable=False) # Qunatidade do ingrediente em estoque
 
 # Definição da classe Estoque
 class Estoque(db.Model):
     __tablename__ = 'estoque'
 
     id = db.Column(db.Integer, primary_key=True)
-    produto_id = db.Column(db.Integer, db.ForeignKey('produtos.id'), nullable=False)
-    quantidade = db.Column(db.Integer, nullable=False)
-    atualizado_em = db.Column(db.DateTime, default=func.now(), onupdate=func.now())
-
-    # Relação com a tabela Produtos
-    produto = db.relationship('Produtos', backref='estoque', lazy=True)
-
-    def __repr__(self):
-        return f"<Estoque(id={self.id})>"
+    ingrediente_id = db.Column(db.Integer, db.ForeignKey('ingredientes.id'), nullable=False) # Chave estrageira para a tabela ingredientes
+    quantidade_disponivel = db.Column(db.Integer, nullable=False) # Quantidade disponível do ingrediente
 
 class Categoria(db.Model):
     __tablename__='categorias'
     __table_args__={'extend_existing':True}
 
     id=db.Column(db.Integer,primary_key=True,autoincrement=True)
-    nome_categoria=db.Column(db.String(50),nullable=False,unique=True)
+    nome=db.Column(db.String(50),nullable=False,unique=True)
+    descricao=db.Column(db.Text,nullable=False)
+    imagem=db.Column(db.String(100),nullable=False) # URL ou caminho da imagem da categoria
 
     def __repr__(self):
-        return f'<Categoria {self.nome_categoria}>'
+        return f'<Categoria {self.nome}>'
     
 class Pedidos(db.Model):
     __tablename__='pedidos'
@@ -78,42 +92,51 @@ class Pedidos(db.Model):
 
     id=db.Column(db.Integer,primary_key=True,autoincrement=True)
     usuario_id=db.Column(db.Integer,db.ForeignKey('usuarios.id'),nullable=False)
-    total=db.Column(db.Numeric(10,2), nullable=False)
-    status=db.Column(db.String(20), nullable=False)
+    data_do_pedido=db.Column(db.DateTime,nullable=False)
+    status_id=db.Column(db.Integer, db.ForeignKey('status_pedido.id'),nullable=False) # chave estrageira para a tabela status_pedido
+    endereco_id=db.Column(db.Integer, db.ForeignKey('enderecos.id'),nullable=False)
+    pagamento_id=db.Column(db.Integer, db.ForeignKey('pagamentos.id'),nullable=False) # chave estrageira para a tabela pagamentos
+    valor_total=db.Column(db.Numeric(10,2),nullable=False)
     criado_em = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     def __repr__(self):
         return f'<Pedido {self.id}>'
 
 class ItemPedido(db.Model):
-    __tablename__='itens_pedido'
-    __table_args__={'extend_existing':True}
+    __tablename__='itens_pedido' 
+    __table_args__={'extend_existing':True} 
 
     id=db.Column(db.Integer,primary_key=True,autoincrement=True)
-    pedido_id=db.Column(db.Integer, db.ForeignKey('pedidos.id'),nullable=False)
-    produtos_id=db.Column(db.Integer, db.ForeignKey('produtos.id'),nullable=False)
-    quantidade=db.Column(db.Integer, nullable=False)
-    preco=db.Column(db.Numeric(10,2), nullable=False)
+    pedido_id=db.Column(db.Integer, db.ForeignKey('pedidos.id'),nullable=False) # chave estrageira para a tabela pedidos
+    produto_id=db.Column(db.Integer, db.ForeignKey('produtos.id'),nullable=False) # chave estrageira para a tabela produtos
+    quantidade=db.Column(db.Integer, nullable=False) 
+    preco_unitario=db.Column(db.Numeric(10,2), nullable=False)
+    sub_total=db.Column(db.Numeric(10,2),nullable=False) # Valor total do item (quantidade)
 
     def __repr__(self): 
-        return f'<ItemPedido {self.id}>'
+        return f'<ItemPedido {self.id}>' 
     
 class Pagamento(db.Model):
     __tablename__='pagamentos'
     __table_args__={'extend_existing':True}
 
     id=db.Column(db.Integer,primary_key=True,autoincrement=True)
-    pedido_id=db.Column(db.Integer, db.ForeignKey('pedidos.id'),nullable=False)
-    usuario_id=db.Column(db.Integer, db.ForeignKey('usuarios.id'),nullable=False)
-    data_pagamento=db.Column(db.DateTime,nullable=False)
-    metodo_pagamento=db.Column(db.String(50),nullable=False)
-    valor_pagamento=db.Column(db.Numeric(10,2), nullable=False)
-    status_pagamento=db.Column(db.String(20),nullable=False)
-    data_confirmacao=db.Column(db.DateTime,nullable=True)
-    detalhes_pagamento=db.Column(db.Text,nullable=True)
+    nome=db.Column(db.String(50),nullable=False) # Nome do método de pagamento
+    descricao=db.Column(db.Text,nullable=False) # Descrição do método de pagamentos
 
     def __repr__(self):
         return f'< Pagamento {self.id}>'
+    
+class StatusPedido(db.Model):
+    __tablename__='status_pedido'
+    __table_args__={'extend_existing':True}
+
+    id=db.Column(db.Integer,primary_key=True,autoincrement=True)
+    nome=db.Column(db.String(50),nullable=False) # Nome do status do pedido
+    descricao=db.Column(db.Text,nullable=False) # Descrição do status do pedido
+
+    def __repr__(self):
+        return f'<StatusPedido {self.nome}>'
     
 class Enderecos(db.Model):
     __tablename__='enderecos'
