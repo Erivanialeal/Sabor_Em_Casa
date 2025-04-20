@@ -29,6 +29,15 @@ class Usuario(db.Model):
         if novo_tipo =='administrador' and not authorized:
             raise ValueError("Somente usuários autorizados podem ser definidos como administradores.")
         self.tipo_de_usuario = novo_tipo
+
+    def to_dict(self):
+        return {
+            'id':self.id,
+            'nome':self.nome,
+            'email':self.email,
+            'telefone':self.telefone,
+            'tipo_de_usuario':self.tipo_de_usuario,
+        }
     
 
     def __repr__(self):
