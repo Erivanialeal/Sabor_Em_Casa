@@ -160,6 +160,20 @@ class Enderecos(db.Model):
     estado=db.Column(db.String(100),nullable=False)
     cep=db.Column(db.String(50),nullable=False)
 
+    def to_dict(self):
+        return{
+            'id':self.id,
+            'usuario_id':self.usuario_id,
+            'rua':self.rua,
+            'numero':self.numero,
+            'complemento':self.complemento,
+            'bairro':self.bairro,
+            'cidade':self.cidade,
+            'estado':self.estado,
+            'cep':self.cep
+        }
+
+
     def __repr__(self):
         return f'<Endereço id={self.rua}>'
     

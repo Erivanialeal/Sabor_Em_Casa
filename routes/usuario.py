@@ -129,14 +129,103 @@ def autenticar_usuario():
         print(f"Senha no banco (hash): {usuario_obj.senha_hash}")
         return jsonify({"mensagem":"Senha incorreta"}), 401 # Retorno quando a autenticação falha.
     # Gerar o token JWT
-    token = create_access_token(identity=nome.id, expires_delta=timedelta(days=1))
+    token = create_access_token(identity=usuario_obj.id, expires_delta=timedelta(days=1))
     # Retornar o token JWT
     return jsonify({"token":token}), 200 # Retorno quando uma página ou recurso é carregado corretamente.
 
+#Rotas para acessar  as informações de endereço do usuário.
 
+#testar essa rota com mais detalhe mais tarde!
+@usuario_bp.route("/listar_endereco_de_um_usuario/<int:id>", methods=['GET'])
+def listar_enderecos_de_um_usuario(id):
+    enderecos=Enderecos.query.filter_by(usuario_id=id).all()  # Se usa o get para buscar pelo id especifico
+    print(enderecos)
+    # Verificar se  existe endereçoes.
+    if not enderecos:
+        return jsonify({"mensagem":"Endereços não encontrados"}),404 # Retorno quando a autenticação falha.
+    # criar uma lista de endereços
+    lista=[endereco.to_dict() for endereco in enderecos] # Criar uma lisata de endereços com os dados de [enderecos]
+    print(lista)
+    return jsonify(lista)
 
+@usuario_bp.route('/adicionar_endereco/<int:id>', methods=['POST'])
+def adicionar_endereco_a_um_usuario(id):
+    dados= request.get_json() # Obtendo os dados da requisição
+    print(dados)
+    # Verifica se o usuário existe
+    usuario=Usuario.query.get(id)
+    print(usuario)
+    if not usuario:
+        return jsonify({'mensagem':'Usuário não encontrado!'}), 404
+    # Verifica se os dados foram enviados corretamente
+    if not dados:
+        return jsonify({'mensagem':'Nenhum dados json enviado!'}),404
+    
+    rua= dados.get('rua')
+    numero= dados.get('numero')
+    complemento= dados.get('complemento')
+    bairro= dados.get('bairro')
+    cidade= dados.get('cidade')
+    estado= dados.get('estado')
+    cep= dados.get('cep')
+    
+    # Verificar se os dados foram adicionados coretamente
+    if not all([rua, numero, bairro, cidade, estado, cep]):
+        return jsonify({'mensagem':'Dados incompletos!'}), 400 # Retorno quando não há dados Json enviados na requisição.
+    # Criar e adicionar novo endereço ao usuário
+    novo_endereco = Enderecos(
+        rua=rua,
+        numero=numero,
+        complemento=complemento,
+        bairro=bairro,
+        cidade=cidade,
+        estado=estado,
+        cep=cep,
+        usuario_id=id  # supondo que você tenha essa FK no modelo
+    )
+    db.session.add(novo_endereco)
+    db.session.commit()
+    return jsonify({'mensagem':'Endereço adicionado com sucesso'}), 200
+
+@usuario_bp.route('/atualizar_endereco/<int:id_endereco>',methods=['PUT'])
+def atualizar_endereco(id_endereco):
+    endereco=Enderecos.query.get(id_endereco) # Busca o endereço pelo ID
+    print(endereco)
+    if not endereco:
+        return jsonify({'mensagem':'Nenhum endereço encontrado'}), 404
+    # Verifica se os dados foram enviados corretamente
+    dados= request.get_json()
+    print(dados)
+    if not dados:
+        return jsonify({"mensagem":"Nenhum dado Json enviado!"}), 404 # Retorno quando não há dados JSON enviados na requisição.
+    # Atualiza os dados do endereço
+    endereco.rua=dados.get('rua',endereco.rua) # Atualiza o nome do usuário
+    endereco.numero=dados.get('numero',endereco.numero)
+    endereco.complemento=dados.get('complemento',endereco.complemento)
+    endereco.bairro=dados.get('bairro', endereco.bairro)
+    endereco.cidade=dados.get('cidade', endereco.cidade)
+    endereco.estado=dados.get('estado', endereco.estado)
+    endereco.cep=dados.get('cep', endereco.cep)
+    # Salvar as alterações
+    db.session.commit()
+    return jsonify({"mensagem":"Endereço atualizado com sucesso!"}), 200
+
+@usuario_bp.route('/deletar_endereco/<int:id_endereco>', methods=['DELETE'])
+def deletar_endereco(id_endereco):
+    endereco=Enderecos.query.get(id_endereco) 
+    if not endereco:
+        return jsonify({'mensagem':"Nehum endereço encontrado!"}), 404 # Retorno quando um recurso não é encontrado.
+    try:
+        db.session.delete(endereco) # Deleta o endereço
+        db.session.commit() # Salva as alterações
+        return jsonify({"mensagem":"Endereço deletado com sucesso!"}), 200 # Retorno quando um recurso é deletado com sucesso.
+    except Exception as e:  # Caso ocorrer um erro
+        db.session.rollback()
+        return jsonify({"erro":"Erro ao deletar endereço"}), 500 # Retorno quando ocorre um erro interno do servidor.
     
 
+    
+    
 
     
 
